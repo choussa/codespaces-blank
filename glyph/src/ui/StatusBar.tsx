@@ -4,6 +4,11 @@
  * Subscribes to the cursor store and the workspace content channel directly, so
  * it can show live line/column, selection, and word count without the
  * application re-rendering on every keystroke.
+ *
+ * It tells the reader only what a reader needs: what document is open, where
+ * the caret is, how long the document is, and — when, and only when, something
+ * is wrong — the first few problems. Engine bookkeeping (compile timings,
+ * service versions) deliberately stays out of the way.
  */
 import { useEffect, useMemo, useState } from 'react';
 import type { CompileResult } from '@vedivad/typst-web-service';
@@ -21,8 +26,6 @@ export interface StatusBarProps {
   active: string;
   entry: string;
   result: CompileResult | null;
-  status: CompileStatus;
-  ms: number;
   server: ServerState;
   onRevealIssue: (path: string, line: number, column: number) => void;
   onOpenIssues: () => void;
@@ -35,8 +38,6 @@ export function StatusBar({
   active,
   entry,
   result,
-  status,
-  ms,
   server,
   onRevealIssue,
   onOpenIssues,
@@ -64,28 +65,14 @@ export function StatusBar({
   const errors = diagnostics.filter((diagnostic) => diagnostic.severity === 'error');
   const warnings = diagnostics.filter((diagnostic) => diagnostic.severity !== 'error');
   const pages = result?.pages.length ?? 0;
+  const problems = errors.length + warnings.length;
 
-  const statusLabel: Record<CompileStatus, string> = {
-    booting: 'Loading engine…',
-    compiling: 'Compiling…',
-    ok: `Compiled in ${ms.toFixed(0)} ms`,
-    error: `Error after ${ms.toFixed(0)} ms`,
-  };
-
-  const serverLabel =
-    server.status === 'online'
-      ? `server ${server.health.engine.version}`
-      : server.status === 'offline'
-        ? 'server offline'
-        : 'server…';
-
+  const serverDegraded = server.status !== 'online';
+  const serverLabel = server.status === 'offline' ? 'Preview service offline' : 'Connecting…';
   const serverTitle =
-    server.status === 'online'
-      ? `typst.ts ${server.health.engine.version} · ${server.health.pool.size} workers · ` +
-        `${server.health.pool.completed} renders · cache ${(server.health.cache.hitRate * 100).toFixed(0)}% hits`
-      : server.status === 'offline'
-        ? `${server.reason} — start it with: cd server && npm run dev`
-        : 'Checking the render service…';
+    server.status === 'offline'
+      ? `${server.reason} — start it with: cd server && npm run dev`
+      : 'Checking the preview service…';
 
   const inActiveFile = position.path === active;
   const selected = inActiveFile ? position.info.selected : 0;
@@ -102,11 +89,10 @@ export function StatusBar({
           {active || 'no file'}
           {active === entry && <span className="status-tag">entry</span>}
         </span>
-        <span className="status-lang">Typst</span>
       </div>
 
       <div className="status-mid">
-        {issueItems.length > 0 ? (
+        {issueItems.length > 0 && (
           <ul className="status-issues">
             {issueItems.map((diagnostic, index) => (
               <li key={index}>
@@ -140,24 +126,21 @@ export function StatusBar({
               </li>
             )}
           </ul>
-        ) : (
-          <span className={`status-compile status-${status}`}>
-            <span className="status-dot" />
-            {statusLabel[status]}
-          </span>
         )}
       </div>
 
       <div className="status-right">
-        <button
-          type="button"
-          className={`status-chip${errors.length ? ' status-chip-error' : warnings.length ? ' status-chip-warn' : ''}`}
-          title="Show issues"
-          onClick={onOpenIssues}
-        >
-          <Icon name="issues" size={11} />
-          {errors.length} / {warnings.length}
-        </button>
+        {problems > 0 && (
+          <button
+            type="button"
+            className={`status-chip${errors.length ? ' status-chip-error' : ' status-chip-warn'}`}
+            title="Show issues"
+            onClick={onOpenIssues}
+          >
+            <Icon name="issues" size={11} />
+            {errors.length} / {warnings.length}
+          </button>
+        )}
         <span className="status-chip" title="Pages in the compiled document">
           <Icon name="file" size={11} />
           {pages} {pages === 1 ? 'page' : 'pages'}
@@ -169,15 +152,17 @@ export function StatusBar({
           Ln {line}, Col {column}
           {selected > 0 && ` (${selected} sel)`}
         </span>
-        <button
-          type="button"
-          className={`server-pill server-${server.status}`}
-          onClick={onRefreshServer}
-          title={serverTitle}
-        >
-          <span className="server-dot" />
-          {serverLabel}
-        </button>
+        {serverDegraded && (
+          <button
+            type="button"
+            className={`server-pill server-${server.status}`}
+            onClick={onRefreshServer}
+            title={serverTitle}
+          >
+            <span className="server-dot" />
+            {serverLabel}
+          </button>
+        )}
       </div>
     </footer>
   );

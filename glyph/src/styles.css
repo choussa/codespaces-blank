@@ -103,10 +103,18 @@
   --elev-1: 0 1px 2px -1px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.35);
   --elev-2: 0 4px 12px -2px rgba(0, 0, 0, 0.55), 0 2px 6px -2px rgba(0, 0, 0, 0.4);
   --elev-3:
-    0 18px 48px -12px rgba(0, 0, 0, 0.7), 0 8px 20px -8px rgba(0, 0, 0, 0.5);
+    0 24px 64px -16px rgba(0, 0, 0, 0.76), 0 8px 24px -8px rgba(0, 0, 0, 0.5);
   --elev-page: 0 1px 1px rgba(0, 0, 0, 0.4), 0 12px 32px -12px rgba(0, 0, 0, 0.7);
 
-  --ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--accent-border);
+  /* Floating material: one glass every overlay and menu is cut from. The frost
+     is load-bearing, not decoration — content passes beneath it, and the blur
+     is what keeps text on both sides legible. */
+  --float-bg: rgba(23, 27, 36, 0.86);
+  --float-border: rgba(255, 255, 255, 0.09);
+  --float-blur: blur(22px) saturate(1.6);
+  --grad-elevated: #171c26;
+  --scrollbar: rgba(124, 138, 162, 0.34);
+  --scrollbar-active: rgba(124, 138, 162, 0.58);
 
   --topbar-h: 48px;
   --statusbar-h: 28px;
@@ -181,8 +189,15 @@
   --elev-1: 0 1px 2px rgba(16, 24, 40, 0.09), 0 1px 3px rgba(16, 24, 40, 0.06);
   --elev-2: 0 6px 16px -4px rgba(16, 24, 40, 0.14), 0 2px 6px -2px rgba(16, 24, 40, 0.1);
   --elev-3:
-    0 20px 48px -16px rgba(16, 24, 40, 0.24), 0 8px 20px -10px rgba(16, 24, 40, 0.16);
+    0 24px 64px -20px rgba(16, 24, 40, 0.28), 0 8px 24px -12px rgba(16, 24, 40, 0.18);
   --elev-page: 0 1px 2px rgba(16, 24, 40, 0.12), 0 10px 28px -12px rgba(16, 24, 40, 0.26);
+
+  --float-bg: rgba(255, 255, 255, 0.85);
+  --float-border: rgba(16, 24, 40, 0.1);
+  --float-blur: blur(22px) saturate(1.4);
+  --grad-elevated: #ffffff;
+  --scrollbar: rgba(84, 99, 124, 0.3);
+  --scrollbar-active: rgba(84, 99, 124, 0.52);
 
   --typ-comment: #6a7383;
   --typ-punct: #1f242c;
@@ -269,6 +284,11 @@ b {
   font-weight: 600;
 }
 
+/* Prose set by the interface wraps for reading, not for the line box. */
+p {
+  text-wrap: pretty;
+}
+
 svg {
   display: block;
 }
@@ -277,6 +297,7 @@ button {
   font: inherit;
   font-size: var(--fs-sm);
   font-weight: 500;
+  letter-spacing: -0.01em;
   color: inherit;
   background: transparent;
   border: 1px solid transparent;
@@ -314,6 +335,7 @@ select,
 textarea {
   font: inherit;
   font-size: var(--fs-sm);
+  letter-spacing: -0.01em;
   color: var(--text);
   background: var(--bg-inset);
   border: 1px solid var(--border);
@@ -422,7 +444,7 @@ code {
   gap: 10px;
   padding: 0 12px;
   height: var(--topbar-h);
-  background: var(--bg-elevated);
+  background: linear-gradient(180deg, var(--grad-elevated), var(--bg-elevated) 90%);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--hairline);
   flex: 0 0 auto;
@@ -2032,20 +2054,33 @@ code {
   margin-top: 6px;
 }
 
+/* Primary and every selected row share one material: solid iris, lit from
+   above by a faint gradient and a one-pixel highlight. */
 .button-primary {
   color: var(--accent-ink);
-  background: var(--accent-solid);
+  background-color: var(--accent-solid);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.09),
+    rgba(255, 255, 255, 0.02) 52%,
+    rgba(0, 0, 0, 0.08)
+  );
   border-color: transparent;
-  box-shadow: var(--elev-1);
+  box-shadow: var(--elev-1), inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
 .button-primary:hover:not(:disabled) {
-  background: var(--accent-solid-hover);
+  background-color: var(--accent-solid-hover);
+}
+
+.button-primary:not(:disabled):active {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), inset 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 
 .button-secondary {
   border-color: var(--border);
-  background: var(--bg-raised);
+  background-color: var(--bg-raised);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0) 70%);
   color: var(--text);
   box-shadow: var(--hairline);
 }
@@ -2254,6 +2289,7 @@ code {
   font-size: var(--fs-xs);
   background: var(--bg-elevated);
   border-top: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 var(--bg);
   color: var(--text-muted);
 }
 
@@ -2294,40 +2330,6 @@ code {
   border-radius: var(--radius-pill);
   padding: 0 7px;
   line-height: 16px;
-}
-
-.status-lang {
-  color: var(--text-faint);
-}
-
-.status-compile {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  color: var(--text-muted);
-}
-
-.status-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--text-faint);
-}
-
-.status-ok .status-dot {
-  background: var(--ok);
-  box-shadow: 0 0 0 3px var(--ok-soft);
-}
-
-.status-error .status-dot {
-  background: var(--err);
-  box-shadow: 0 0 0 3px var(--err-soft);
-}
-
-.status-compiling .status-dot {
-  background: var(--accent);
-  box-shadow: 0 0 0 3px var(--accent-soft);
-  animation: pulse 1s var(--ease-in-out) infinite;
 }
 
 @keyframes pulse {
@@ -2389,6 +2391,12 @@ code {
 
 .status-chip:hover:not(:disabled) {
   background: var(--bg-hover);
+}
+
+/* Chips that inform rather than act keep a flat face: a hover fill on static
+   text promises a click that does nothing. */
+span.status-chip:hover {
+  background: transparent;
 }
 
 .status-chip-error {
@@ -2467,7 +2475,14 @@ code {
 
 .menu-item:hover:not(:disabled),
 .menu-item-active:not(:disabled) {
-  background: var(--accent-solid);
+  background-color: var(--accent-solid);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.02) 55%,
+    rgba(0, 0, 0, 0.06)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
   color: var(--accent-ink);
 }
 
@@ -2480,7 +2495,12 @@ code {
 }
 
 .menu-item-danger:hover:not(:disabled) {
-  background: var(--err);
+  background-color: var(--err);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.02) 55%
+  );
   color: #fff;
 }
 
@@ -2942,7 +2962,14 @@ code {
 }
 
 .palette-item.active {
-  background: var(--accent-solid);
+  background-color: var(--accent-solid);
+  background-image: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.02) 55%,
+    rgba(0, 0, 0, 0.06)
+  );
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
   color: var(--accent-ink);
 }
 
@@ -3108,6 +3135,19 @@ code {
 
 /* ------------------------------------------------------------- 18. misc */
 
+/* Every floating surface is cut from the same frost: translucent raised ink
+   over a blur, so what passes beneath stays part of the composition instead of
+   being cut away. Themes that cannot blur fall back to a near-opaque plate. */
+.menu-panel,
+.dialog,
+.palette,
+.welcome {
+  background: var(--float-bg);
+  border-color: var(--float-border);
+  -webkit-backdrop-filter: var(--float-blur);
+  backdrop-filter: var(--float-blur);
+}
+
 .notice {
   display: inline-flex;
   align-items: center;
@@ -3150,10 +3190,6 @@ code {
   border-radius: var(--radius-pill);
 }
 
-.server-pill.server-online {
-  color: var(--text);
-}
-
 .server-dot {
   width: 6px;
   height: 6px;
@@ -3180,7 +3216,7 @@ code {
 /* scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--border-strong) transparent;
+  scrollbar-color: var(--scrollbar) transparent;
 }
 
 ::-webkit-scrollbar {
@@ -3192,15 +3228,19 @@ code {
   background: transparent;
 }
 
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 ::-webkit-scrollbar-thumb {
-  background: var(--border-strong);
+  background: var(--scrollbar);
   border: 3px solid transparent;
   background-clip: content-box;
   border-radius: var(--radius-pill);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--text-faint);
+  background: var(--scrollbar-active);
   background-clip: content-box;
 }
 

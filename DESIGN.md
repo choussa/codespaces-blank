@@ -176,6 +176,18 @@ A hybrid: tonal layering does the work, shadows confirm it. Four planes step by 
 
 Gently curved throughout, sized to the element rather than the page. Utility radii are 4px (kbd, small chips), 6px (buttons, inputs, menu rows, rail buttons), 8px (menus, tooltips, dialogs' inner blocks), and 12px (dialogs, the palette, the welcome card, empty-state marks). Status pills, badges, and switches are fully rounded (`999px`); the entry marker is a small circle. Borders are 1px hairlines — never a thick colored rail on a card or list item, which is why the CodeMirror diagnostic's 3px severity border became a drawn marker.
 
+## Iconography
+
+Every glyph is a [Lucide](https://lucide.dev) icon on a 24×24 grid, picked so the metaphor holds even when the icon stands alone — the rail, the toolbar, and the status chips carry no adjacent text. One grammar across the whole app: 2px round-capped strokes, `currentColor`, no fills, one weight.
+
+- **Source:** `src/ui/Icon.tsx` maps a semantic name (`name="issues"`) to a Lucide component. Call sites never import Lucide directly, so the vocabulary stays fixed and a wrong name fails at compile time.
+- **Weight:** 2px on the 24-grid — ≈1.3px at 16, ≈1.5px at 18. This is the "strong" setting: present at rail size, not clogged at chip size. Drop to 1.75 only in the densest menus; never below.
+- **Sizes:** 18px in the rail, 15px in toolbars, 14px in menus and palette rows, 11–13px in chips and inline markers.
+- **Color:** always inherited. Icons are `aria-hidden`; the control that holds them carries the label and the tooltip.
+
+### Named Rules
+**The One Grammar Rule.** A new glyph is a Lucide icon before it is a drawn path. Inventing a shape to match an old one fractures the set; choosing the plainest Lucide metaphor keeps it whole.
+
 ## Components
 
 ### Buttons

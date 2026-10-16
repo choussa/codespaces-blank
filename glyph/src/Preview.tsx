@@ -243,7 +243,7 @@ export function Preview({
           </div>
           <p className="preview-loading-label">
             <span className="spinner" />
-            Compiling the first pages…
+            Preparing the preview…
           </p>
         </div>
       )}

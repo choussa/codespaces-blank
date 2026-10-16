@@ -109,7 +109,6 @@ export function App() {
   const [project, setProject] = useState<TypstProject | null>(null);
   const [result, setResult] = useState<CompileResult | null>(null);
   const [status, setStatus] = useState<CompileStatus>('booting');
-  const [ms, setMs] = useState(0);
   const [settings, setSettings] = useState<Settings>(loadSettings);
   const [notice, setNotice] = useState<string | null>(null);
   const [goTo, setGoTo] = useState<GoTo | null>(null);
@@ -129,7 +128,6 @@ export function App() {
 
   const viewRef = useRef<EditorView | null>(null);
   const navRef = useRef<PreviewNavigator | null>(null);
-  const editAtRef = useRef(0);
   const followTimer = useRef<number | undefined>(undefined);
   const noticeTimer = useRef<number | undefined>(undefined);
   const goToNonce = useRef(0);
@@ -225,10 +223,8 @@ export function App() {
     const unsubscribe = project.onCompile((compiled) => {
       setResult(compiled);
       setStatus(compiled.diagnostics.some((d) => d.severity === 'error') ? 'error' : 'ok');
-      if (editAtRef.current) setMs(performance.now() - editAtRef.current);
     });
 
-    editAtRef.current = performance.now();
     void project.compile();
     return unsubscribe;
   }, [project]);
@@ -238,7 +234,6 @@ export function App() {
   const handleChange = useCallback(
     (path: string, text: string) => {
       editedRef.current = true;
-      editAtRef.current = performance.now();
       setStatus((current) => (current === 'compiling' ? current : 'compiling'));
       workspace.setText(path, text);
     },
@@ -991,12 +986,12 @@ export function App() {
                     <Icon name="file" size={20} />
                   </span>
                   <h2 className="empty-title">
-                    {project ? 'No file is open' : 'Starting the Typst engine'}
+                    {project ? 'No file is open' : 'Getting ready'}
                   </h2>
                   <p className="empty-text">
                     {project
                       ? 'Open a file from the Files panel, or start a new one. Everything you write compiles as you type.'
-                      : 'The Typst engine loads in a Web Worker, so the first compile happens on your machine.'}
+                      : 'The editor runs entirely on your device; it just needs a moment to start.'}
                   </p>
                   {project && (
                     <div className="empty-actions">
@@ -1074,7 +1069,7 @@ export function App() {
               ) : (
                 <div className="preview-empty">
                   <span className="spinner" />
-                  Starting the Typst engine…
+                  Preparing the preview…
                 </div>
               )}
             </section>
@@ -1089,8 +1084,6 @@ export function App() {
           active={snapshot.active}
           entry={snapshot.entry}
           result={result}
-          status={status}
-          ms={ms}
           server={server}
           onRevealIssue={(path, line, column) => reveal(path, { line, column })}
           onOpenIssues={() => openPanel('issues')}
