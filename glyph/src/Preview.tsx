@@ -231,22 +231,39 @@ export function Preview({
       <div className="preview-scroller" ref={scrollerRef} />
 
       {!rendered && (
-        <div className="preview-empty">
-          <span className="spinner" />
-          Compiling…
+        <div className="preview-empty" role="status" aria-live="polite">
+          <div className="page-skeleton" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
+          <p className="preview-loading-label">
+            <span className="spinner" />
+            Compiling the first pages…
+          </p>
         </div>
       )}
 
       {rendered && totalPages === 0 && (
         <div className="preview-empty">
-          <Icon name="info" size={18} />
-          This document produced no pages.
+          <span className="empty-mark">
+            <Icon name="info" size={20} />
+          </span>
+          <h2 className="empty-title">Nothing to show yet</h2>
+          <p className="empty-text">
+            The document compiled cleanly but produced no pages. Check the page and margin settings,
+            or add some content.
+          </p>
         </div>
       )}
 
       {rendered && totalPages > 1 && (
         <div className="preview-page-indicator" role="status">
-          {currentPage} / {totalPages}
+          page {currentPage} / {totalPages}
         </div>
       )}
     </div>

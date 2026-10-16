@@ -28,6 +28,7 @@ import { PixelResizer, Splitter } from './ui/Splitter';
 import { CommandPalette, type Command } from './ui/CommandPalette';
 import { StatusBar, type CompileStatus } from './ui/StatusBar';
 import { AboutDialog, ShortcutsDialog } from './ui/InfoDialogs';
+import { Welcome } from './ui/Welcome';
 import { LeftRail } from './panels/LeftRail';
 import { FilePanel } from './panels/FilePanel';
 import { SearchPanel } from './panels/SearchPanel';
@@ -66,6 +67,25 @@ const EXPORT_EXT: Record<Exclude<RenderFormat, 'pages'>, string> = {
 /** Whether the platform's primary modifier is ⌘ rather than Ctrl. */
 const IS_MAC = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
 
+/** Set once the first-run welcome has been dismissed. */
+const WELCOME_KEY = 'glyph.welcome.v1';
+
+function readWelcome(): boolean {
+  try {
+    return !window.localStorage.getItem(WELCOME_KEY);
+  } catch {
+    return false;
+  }
+}
+
+function rememberWelcome(): void {
+  try {
+    window.localStorage.setItem(WELCOME_KEY, '1');
+  } catch {
+    /* storage disabled — show it again next time, which is fine. */
+  }
+}
+
 export function App() {
   /* --------------------------------------------------------------- stores */
 
@@ -103,6 +123,7 @@ export function App() {
   } | null>(null);
   const [serverPreview, setServerPreview] = useState<number | null>(null);
   const [effectiveScale, setEffectiveScale] = useState(1);
+  const [welcome, setWelcome] = useState(readWelcome);
 
   /* ---------------------------------------------------------------- refs */
 
@@ -133,6 +154,11 @@ export function App() {
       settingsRef.current = next;
       return next;
     });
+  }, []);
+
+  const dismissWelcome = useCallback(() => {
+    rememberWelcome();
+    setWelcome(false);
   }, []);
 
   /* --------------------------------------------------------------- engine */
@@ -737,7 +763,7 @@ export function App() {
   /* --------------------------------------------------------------- render */
 
   return (
-    <div className={`app app-layout-${layout}`}>
+    <div className={`app app-layout-${layout}`} data-compiling={status === 'compiling'}>
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">g</span>
@@ -961,12 +987,35 @@ export function App() {
                 />
               ) : (
                 <div className="editor-empty">
-                  <Icon name="file" size={24} />
-                  <p>{project ? 'No file is open.' : 'Starting the Typst engine…'}</p>
+                  <span className="empty-mark">
+                    <Icon name="file" size={20} />
+                  </span>
+                  <h2 className="empty-title">
+                    {project ? 'No file is open' : 'Starting the Typst engine'}
+                  </h2>
+                  <p className="empty-text">
+                    {project
+                      ? 'Open a file from the Files panel, or start a new one. Everything you write compiles as you type.'
+                      : 'The Typst engine loads in a Web Worker, so the first compile happens on your machine.'}
+                  </p>
                   {project && (
-                    <button type="button" onClick={() => requestDraft('file', '/')}>
-                      Create a file
-                    </button>
+                    <div className="empty-actions">
+                      <button
+                        type="button"
+                        className="button-primary"
+                        onClick={() => requestDraft('file', '/')}
+                      >
+                        <Icon name="plus" size={14} />
+                        New file
+                      </button>
+                      <button
+                        type="button"
+                        className="button-secondary"
+                        onClick={() => update({ panel: 'files' })}
+                      >
+                        Open files
+                      </button>
+                    </div>
                   )}
                 </div>
               )}
@@ -1075,6 +1124,20 @@ export function App() {
             />
           </div>
         </div>
+      )}
+
+      {welcome && project && (
+        <Welcome
+          onStart={dismissWelcome}
+          onNewFile={() => {
+            dismissWelcome();
+            requestDraft('file', '/');
+          }}
+          onShortcuts={() => {
+            dismissWelcome();
+            setDialog('shortcuts');
+          }}
+        />
       )}
 
       {paletteOpen && <CommandPalette commands={commands} onClose={() => setPaletteOpen(false)} />}

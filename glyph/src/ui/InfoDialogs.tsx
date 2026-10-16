@@ -1,6 +1,5 @@
 /** The two informational dialogs: keyboard shortcuts and about. */
 import { Dialog } from './Dialog';
-import { Icon } from './Icon';
 
 interface Shortcut {
   keys: string;
@@ -102,8 +101,8 @@ export function AboutDialog({
   return (
     <Dialog title="About glyph" subtitle="A Typst editor for the web." width={480} onClose={onClose}>
       <div className="about">
-        <div className="about-mark">
-          <Icon name="text" size={28} />
+        <div className="about-mark" aria-hidden="true">
+          g
         </div>
         <p>
           glyph compiles Typst in the browser with a WebAssembly engine, so the preview updates as

@@ -1,7 +1,7 @@
 /**
  * The left icon rail: one button per panel, plus the two global affordances
  * (command palette, help). Issue counts ride on the Issues button so problems
- * are visible without opening the panel.
+ * are visible without opening the panel; a hover label names each control.
  */
 import { Icon } from '../ui/Icon';
 import { PANELS, type PanelId } from './registry';
@@ -33,7 +33,8 @@ export function LeftRail({
           type="button"
           className={`rail-button${active === panel.id ? ' rail-active' : ''}`}
           aria-pressed={active === panel.id}
-          title={`${panel.label} (${panel.shortcut})`}
+          aria-label={`${panel.label} (${panel.shortcut})`}
+          data-label={panel.label}
           onClick={() => onSelect(panel.id)}
         >
           <Icon name={panel.icon} size={18} />
@@ -50,12 +51,19 @@ export function LeftRail({
       <button
         type="button"
         className="rail-button"
-        title="Command palette (⌘K)"
+        aria-label="Command palette (⌘K)"
+        data-label="Command palette"
         onClick={onCommandPalette}
       >
         <Icon name="keyboard" size={18} />
       </button>
-      <button type="button" className="rail-button" title="Help (⌘/)" onClick={onHelp}>
+      <button
+        type="button"
+        className="rail-button"
+        aria-label="Keyboard shortcuts (⇧⌘/)"
+        data-label="Keyboard shortcuts"
+        onClick={onHelp}
+      >
         <Icon name="help" size={18} />
       </button>
     </nav>
